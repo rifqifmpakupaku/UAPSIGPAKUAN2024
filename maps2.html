@@ -1,0 +1,1716 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/MarkerCluster.css">
+        <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet.markercluster.js"></script>
+        <script src="data/ADMINISTRASIDESA_AR_25K_2.js"></script>
+        <script src="data/Radius_Pemantauan_3.js"></script>
+        <script src="data/Titik_Pemantauan_UTM_4.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-7.986080958329648,112.62636652739488],[-7.9806045138382835,112.63378907991401]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OSMStandard_0');
+        map.getPane('pane_OSMStandard_0').style.zIndex = 400;
+        var layer_OSMStandard_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_0;
+        map.addLayer(layer_OSMStandard_0);
+        map.createPane('pane_GoogleSatellite_1');
+        map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
+        var layer_GoogleSatellite_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_1',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_1;
+        map.addLayer(layer_GoogleSatellite_1);
+        function pop_ADMINISTRASIDESA_AR_25K_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">NAMOBJ</th>\
+                        <td>' + (feature.properties['NAMOBJ'] !== null ? autolinker.link(feature.properties['NAMOBJ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">REMARK</th>\
+                        <td>' + (feature.properties['REMARK'] !== null ? autolinker.link(feature.properties['REMARK'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">SHAPE_Leng</th>\
+                        <td>' + (feature.properties['SHAPE_Leng'] !== null ? autolinker.link(feature.properties['SHAPE_Leng'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">SHAPE_Area</th>\
+                        <td>' + (feature.properties['SHAPE_Area'] !== null ? autolinker.link(feature.properties['SHAPE_Area'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_ADMINISTRASIDESA_AR_25K_2_0(feature) {
+            switch(String(feature.properties['NAMOBJ'])) {
+                case 'AMPELDENTO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,54,109,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'ARJOWINANGUN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(13,33,218,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'BAKALANKRAJAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(72,228,220,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'BALEARJOSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,217,18,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'BANJARARUM':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(117,223,79,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'CEMOROKANDANG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,210,80,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'DINOYO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(85,209,168,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'JEDONG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(116,221,42,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KALISONGO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(47,240,192,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KARANGWIDORO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(25,229,192,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEBONAGUNG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(207,188,111,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. ARJOSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(38,13,227,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BANDULAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(233,144,77,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BANDUNGREJOSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(59,22,220,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BARENG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(91,31,210,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BLIMBING':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(209,12,45,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BUMIAYU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(93,154,225,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BUNULREJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(192,62,218,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. BURING':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,44,114,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. CIPTOMULYO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(203,217,126,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. GADANG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,34,24,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. GADINGKASRI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(82,171,201,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. JATIMULYO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(119,212,134,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. JODIPAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(68,205,60,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KARANGBESUKI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,238,72,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KASIN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(39,226,123,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KAUMAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,210,86,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KEBONSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,197,120,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KEDUNGKANDANG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(33,237,155,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KESATRIAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(124,92,218,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KETAWANGGEDE':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,164,128,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KIDULDALEM':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(157,125,205,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KLOJEN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,206,84,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KOTALAMA':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,141,130,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. KRLURAHAN LOWOKWARU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,78,110,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. LESANPURO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(212,37,127,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. MADYOPURO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(169,42,228,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. MERGOSONO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(207,160,71,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. MOJOLANGU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,15,141,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. ORO-ORODOWO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(107,240,149,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. PANDANWANGI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(214,61,196,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. PENAGGUNGAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(100,203,124,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. PISANGCANDI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,62,178,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. POLEHAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,204,52,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. POLOWIJEN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(197,235,133,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. PURWANTORO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(40,198,229,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. PURWODADI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(75,125,201,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. RAMPALCELAKET':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(139,205,236,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. SAMAAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(82,207,211,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. SAWOJAJAR':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,227,206,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. SUKOHARJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(144,236,98,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. SUKUN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(75,121,220,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. SUMBERSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,175,32,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. TANJUNGREJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(208,95,202,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. TLOGOMAS':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,71,217,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. TULUSREJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(46,52,217,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. TUNJUNGSEKAR':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(120,219,158,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEL. WONOKOYO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,157,137,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KENDALPAYAK':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,154,53,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KEPUHARJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(74,69,207,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'KIDAL':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,46,61,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'LANDUNGSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,219,117,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'MANGLIAWAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(171,104,213,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'MERJOSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(88,224,90,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'MULYOAGUNG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(216,75,77,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'MULYOREJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(128,176,217,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'NGINGIT':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(236,72,121,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'PANDANLANDUNG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,51,170,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'SEKARPURO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(236,112,211,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'SIDORAHAYU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(204,94,51,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'SITIREJO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(129,203,38,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'SUMBERKRADENAN':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(180,227,71,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'SUMBERSUKO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(62,240,157,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TAMBAKSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(136,219,58,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TANGKILSARI':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(76,110,212,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TASIKMADU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(192,102,202,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TEGALGONDO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(125,52,208,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TEGALWERU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(103,123,209,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TELOGOWARU':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(122,22,204,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TIRTOMOYO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,184,219,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TUNGGULWULUNG':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(90,193,204,0.3)',
+                interactive: true,
+            }
+                    break;
+                case 'TUNJUNGTIRTO':
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(209,126,210,0.3)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(216,125,35,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_ADMINISTRASIDESA_AR_25K_2');
+        map.getPane('pane_ADMINISTRASIDESA_AR_25K_2').style.zIndex = 402;
+        map.getPane('pane_ADMINISTRASIDESA_AR_25K_2').style['mix-blend-mode'] = 'normal';
+        var layer_ADMINISTRASIDESA_AR_25K_2 = new L.geoJson(json_ADMINISTRASIDESA_AR_25K_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ADMINISTRASIDESA_AR_25K_2',
+            layerName: 'layer_ADMINISTRASIDESA_AR_25K_2',
+            pane: 'pane_ADMINISTRASIDESA_AR_25K_2',
+            onEachFeature: pop_ADMINISTRASIDESA_AR_25K_2,
+            style: style_ADMINISTRASIDESA_AR_25K_2_0,
+        });
+        bounds_group.addLayer(layer_ADMINISTRASIDESA_AR_25K_2);
+        map.addLayer(layer_ADMINISTRASIDESA_AR_25K_2);
+        function pop_Radius_Pemantauan_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+                
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>NAMOBJ</strong><br />' + (feature.properties['NAMOBJ'] !== null ? autolinker.link(feature.properties['NAMOBJ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">HubDist</th>\
+                        <td>' + (feature.properties['HubDist'] !== null ? autolinker.link(feature.properties['HubDist'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">path</th>\
+                        <td>' + (feature.properties['path'] !== null ? autolinker.link(feature.properties['path'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Suhu</th>\
+                        <td>' + (feature.properties['Suhu'] !== null ? autolinker.link(feature.properties['Suhu'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Kelembaban</th>\
+                        <td>' + (feature.properties['Kelembaban'] !== null ? autolinker.link(feature.properties['Kelembaban'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">xcoord</th>\
+                        <td>' + (feature.properties['xcoord'] !== null ? autolinker.link(feature.properties['xcoord'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ycoord</th>\
+                        <td>' + (feature.properties['ycoord'] !== null ? autolinker.link(feature.properties['ycoord'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Foto</th>\
+                        <td>' + (feature.properties['Foto'] !== null ? '<img src="images/' + String(feature.properties['Foto']).replace(/[\\\/:]/g, '_').trim() + '">' : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Radius_Pemantauan_3_0(feature) {
+            if (feature.properties['Suhu'] >= -40.000000 && feature.properties['Suhu'] <= -16.000000 ) {
+                return {
+                pane: 'pane_Radius_Pemantauan_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,21,254,0.4)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Suhu'] >= -16.000000 && feature.properties['Suhu'] <= 16.000000 ) {
+                return {
+                pane: 'pane_Radius_Pemantauan_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,234,242,0.4)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Suhu'] >= 16.000000 && feature.properties['Suhu'] <= 35.000000 ) {
+                return {
+                pane: 'pane_Radius_Pemantauan_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(40,233,44,0.4)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Suhu'] >= 35.000000 && feature.properties['Suhu'] <= 56.000000 ) {
+                return {
+                pane: 'pane_Radius_Pemantauan_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(244,165,17,0.4)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Suhu'] >= 56.000000 && feature.properties['Suhu'] <= 80.000000 ) {
+                return {
+                pane: 'pane_Radius_Pemantauan_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,0,0,0.4)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_Radius_Pemantauan_3');
+        map.getPane('pane_Radius_Pemantauan_3').style.zIndex = 403;
+        map.getPane('pane_Radius_Pemantauan_3').style['mix-blend-mode'] = 'normal';
+        var layer_Radius_Pemantauan_3 = new L.geoJson(json_Radius_Pemantauan_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Radius_Pemantauan_3',
+            layerName: 'layer_Radius_Pemantauan_3',
+            pane: 'pane_Radius_Pemantauan_3',
+            onEachFeature: pop_Radius_Pemantauan_3,
+            style: style_Radius_Pemantauan_3_0,
+        });
+        bounds_group.addLayer(layer_Radius_Pemantauan_3);
+        map.addLayer(layer_Radius_Pemantauan_3);
+        function pop_Titik_Pemantauan_UTM_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAMOBJ'] !== null ? autolinker.link(feature.properties['NAMOBJ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HubDist'] !== null ? autolinker.link(feature.properties['HubDist'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['path'] !== null ? autolinker.link(feature.properties['path'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Suhu'] !== null ? autolinker.link(feature.properties['Suhu'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Kelembaban'] !== null ? autolinker.link(feature.properties['Kelembaban'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['xcoord'] !== null ? autolinker.link(feature.properties['xcoord'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ycoord'] !== null ? autolinker.link(feature.properties['ycoord'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Titik_Pemantauan_UTM_4_0() {
+            return {
+                pane: 'pane_Titik_Pemantauan_UTM_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,113,88,1.0)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_Titik_Pemantauan_UTM_4');
+        map.getPane('pane_Titik_Pemantauan_UTM_4').style.zIndex = 404;
+        map.getPane('pane_Titik_Pemantauan_UTM_4').style['mix-blend-mode'] = 'normal';
+        var layer_Titik_Pemantauan_UTM_4 = new L.geoJson(json_Titik_Pemantauan_UTM_4, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_Titik_Pemantauan_UTM_4',
+            layerName: 'layer_Titik_Pemantauan_UTM_4',
+            pane: 'pane_Titik_Pemantauan_UTM_4',
+            onEachFeature: pop_Titik_Pemantauan_UTM_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Titik_Pemantauan_UTM_4_0(feature));
+            },
+        });
+        var cluster_Titik_Pemantauan_UTM_4 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_Titik_Pemantauan_UTM_4.addLayer(layer_Titik_Pemantauan_UTM_4);
+
+        bounds_group.addLayer(layer_Titik_Pemantauan_UTM_4);
+        cluster_Titik_Pemantauan_UTM_4.addTo(map);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var overlaysTree = [
+            {label: '<img src="legend/Titik_Pemantauan_UTM_4.png" /> Titik_Pemantauan_UTM', layer: cluster_Titik_Pemantauan_UTM_4},
+            {label: 'Radius_Pemantauan<br /><table><tr><td style="text-align: center;"><img src="legend/Radius_Pemantauan_3_SangatDingin0.png" /></td><td>Sangat Dingin</td></tr><tr><td style="text-align: center;"><img src="legend/Radius_Pemantauan_3_Dingin1.png" /></td><td>Dingin</td></tr><tr><td style="text-align: center;"><img src="legend/Radius_Pemantauan_3_Sedang2.png" /></td><td>Sedang</td></tr><tr><td style="text-align: center;"><img src="legend/Radius_Pemantauan_3_Hangat3.png" /></td><td>Hangat </td></tr><tr><td style="text-align: center;"><img src="legend/Radius_Pemantauan_3_Panas4.png" /></td><td>Panas</td></tr></table>', layer: layer_Radius_Pemantauan_3},
+            {label: 'ADMINISTRASIDESA_AR_25K<br /><table><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_AMPELDENTO0.png" /></td><td>AMPELDENTO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_ARJOWINANGUN1.png" /></td><td>ARJOWINANGUN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_BAKALANKRAJAN2.png" /></td><td>BAKALANKRAJAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_BALEARJOSARI3.png" /></td><td>BALEARJOSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_BANJARARUM4.png" /></td><td>BANJARARUM</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_CEMOROKANDANG5.png" /></td><td>CEMOROKANDANG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_DINOYO6.png" /></td><td>DINOYO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_JEDONG7.png" /></td><td>JEDONG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KALISONGO8.png" /></td><td>KALISONGO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KARANGWIDORO9.png" /></td><td>KARANGWIDORO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KEBONAGUNG10.png" /></td><td>KEBONAGUNG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELARJOSARI11.png" /></td><td>KEL. ARJOSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBANDULAN12.png" /></td><td>KEL. BANDULAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBANDUNGREJOSARI13.png" /></td><td>KEL. BANDUNGREJOSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBARENG14.png" /></td><td>KEL. BARENG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBLIMBING15.png" /></td><td>KEL. BLIMBING</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBUMIAYU16.png" /></td><td>KEL. BUMIAYU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBUNULREJO17.png" /></td><td>KEL. BUNULREJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELBURING18.png" /></td><td>KEL. BURING</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELCIPTOMULYO19.png" /></td><td>KEL. CIPTOMULYO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELGADANG20.png" /></td><td>KEL. GADANG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELGADINGKASRI21.png" /></td><td>KEL. GADINGKASRI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELJATIMULYO22.png" /></td><td>KEL. JATIMULYO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELJODIPAN23.png" /></td><td>KEL. JODIPAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKARANGBESUKI24.png" /></td><td>KEL. KARANGBESUKI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKASIN25.png" /></td><td>KEL. KASIN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKAUMAN26.png" /></td><td>KEL. KAUMAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKEBONSARI27.png" /></td><td>KEL. KEBONSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKEDUNGKANDANG28.png" /></td><td>KEL. KEDUNGKANDANG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKESATRIAN29.png" /></td><td>KEL. KESATRIAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKETAWANGGEDE30.png" /></td><td>KEL. KETAWANGGEDE</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKIDULDALEM31.png" /></td><td>KEL. KIDULDALEM</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKLOJEN32.png" /></td><td>KEL. KLOJEN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKOTALAMA33.png" /></td><td>KEL. KOTALAMA</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELKRLURAHANLOWOKWARU34.png" /></td><td>KEL. KRLURAHAN LOWOKWARU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELLESANPURO35.png" /></td><td>KEL. LESANPURO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELMADYOPURO36.png" /></td><td>KEL. MADYOPURO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELMERGOSONO37.png" /></td><td>KEL. MERGOSONO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELMOJOLANGU38.png" /></td><td>KEL. MOJOLANGU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELOROORODOWO39.png" /></td><td>KEL. ORO-ORODOWO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPANDANWANGI40.png" /></td><td>KEL. PANDANWANGI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPENAGGUNGAN41.png" /></td><td>KEL. PENAGGUNGAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPISANGCANDI42.png" /></td><td>KEL. PISANGCANDI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPOLEHAN43.png" /></td><td>KEL. POLEHAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPOLOWIJEN44.png" /></td><td>KEL. POLOWIJEN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPURWANTORO45.png" /></td><td>KEL. PURWANTORO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELPURWODADI46.png" /></td><td>KEL. PURWODADI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELRAMPALCELAKET47.png" /></td><td>KEL. RAMPALCELAKET</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELSAMAAN48.png" /></td><td>KEL. SAMAAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELSAWOJAJAR49.png" /></td><td>KEL. SAWOJAJAR</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELSUKOHARJO50.png" /></td><td>KEL. SUKOHARJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELSUKUN51.png" /></td><td>KEL. SUKUN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELSUMBERSARI52.png" /></td><td>KEL. SUMBERSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELTANJUNGREJO53.png" /></td><td>KEL. TANJUNGREJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELTLOGOMAS54.png" /></td><td>KEL. TLOGOMAS</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELTULUSREJO55.png" /></td><td>KEL. TULUSREJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELTUNJUNGSEKAR56.png" /></td><td>KEL. TUNJUNGSEKAR</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KELWONOKOYO57.png" /></td><td>KEL. WONOKOYO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KENDALPAYAK58.png" /></td><td>KENDALPAYAK</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KEPUHARJO59.png" /></td><td>KEPUHARJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_KIDAL60.png" /></td><td>KIDAL</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_LANDUNGSARI61.png" /></td><td>LANDUNGSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_MANGLIAWAN62.png" /></td><td>MANGLIAWAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_MERJOSARI63.png" /></td><td>MERJOSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_MULYOAGUNG64.png" /></td><td>MULYOAGUNG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_MULYOREJO65.png" /></td><td>MULYOREJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_NGINGIT66.png" /></td><td>NGINGIT</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_PANDANLANDUNG67.png" /></td><td>PANDANLANDUNG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_SEKARPURO68.png" /></td><td>SEKARPURO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_SIDORAHAYU69.png" /></td><td>SIDORAHAYU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_SITIREJO70.png" /></td><td>SITIREJO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_SUMBERKRADENAN71.png" /></td><td>SUMBERKRADENAN</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_SUMBERSUKO72.png" /></td><td>SUMBERSUKO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TAMBAKSARI73.png" /></td><td>TAMBAKSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TANGKILSARI74.png" /></td><td>TANGKILSARI</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TASIKMADU75.png" /></td><td>TASIKMADU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TEGALGONDO76.png" /></td><td>TEGALGONDO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TEGALWERU77.png" /></td><td>TEGALWERU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TELOGOWARU78.png" /></td><td>TELOGOWARU</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TIRTOMOYO79.png" /></td><td>TIRTOMOYO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TUNGGULWULUNG80.png" /></td><td>TUNGGULWULUNG</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_TUNJUNGTIRTO81.png" /></td><td>TUNJUNGTIRTO</td></tr><tr><td style="text-align: center;"><img src="legend/ADMINISTRASIDESA_AR_25K_2_82.png" /></td><td></td></tr></table>', layer: layer_ADMINISTRASIDESA_AR_25K_2},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
+            {label: "OSM Standard", layer: layer_OSMStandard_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+        layer_Radius_Pemantauan_3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Suhu'] !== null?String('<div style="color: #ffffff; font-size: 20pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['Suhu']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Radius_Pemantauan_3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_Radius_Pemantauan_3]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Radius_Pemantauan_3]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Radius_Pemantauan_3]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Radius_Pemantauan_3]);
+        });
+        </script>
+    </body>
+</html>
